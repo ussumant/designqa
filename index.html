@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design QA Tool</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.js"></script>
+    <style>
+        .comparison-container {
+            position: relative;
+            width: 100%;
+            height: 600px;
+            overflow: hidden;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .overlay-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+        }
+        .control-panel {
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 p-4">
+    <div id="root"></div>
+    <script type="text/babel">
+        const DesignQATool = () => {
+            const [figmaImage, setFigmaImage] = React.useState(null);
+            const [devImage, setDevImage] = React.useState(null);
+            const [opacity, setOpacity] = React.useState(0.5);
+            const [scale, setScale] = React.useState(1);
+            const [position, setPosition] = React.useState({ x: 0, y: 0 });
+            const [isDragging, setIsDragging] = React.useState(false);
+
+            const handleImageUpload = (event, type) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if (type === 'figma') {
+                            setFigmaImage(e.target.result);
+                        } else {
+                            setDevImage(e.target.result);
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
+            const handleMouseDown = (e) => {
+                setIsDragging(true);
+            };
+
+            const handleMouseMove = (e) => {
+                if (isDragging) {
+                    setPosition({
+                        x: position.x + e.movementX,
+                        y: position.y + e.movementY
+                    });
+                }
+            };
+
+            const handleMouseUp = () => {
+                setIsDragging(false);
+            };
+
+            return (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white p-6 rounded-lg shadow-lg">
+                        <h1 className="text-2xl font-bold mb-6">Design QA Tool</h1>
+                        
+                        <div className="control-panel">
+                            <div className="grid grid-cols-2 gap-4 mb-4">
+                                <div>
+                                    <label className="block mb-2">Figma Screenshot</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => handleImageUpload(e, 'figma')}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block mb-2">Development Screenshot</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => handleImageUpload(e, 'dev')}
+                                        className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4 mb-4">
+                                <div>
+                                    <label className="block mb-2">Opacity</label>
+                                    <input 
+                                        type="range"
+                                        min="0"
+                                        max="1"
+                                        step="0.1"
+                                        value={opacity}
+                                        onChange={(e) => setOpacity(e.target.value)}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block mb-2">Zoom</label>
+                                    <input 
+                                        type="range"
+                                        min="0.5"
+                                        max="2"
+                                        step="0.1"
+                                        value={scale}
+                                        onChange={(e) => setScale(e.target.value)}
+                                        className="w-full"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div 
+                            className="comparison-container cursor-move"
+                            onMouseDown={handleMouseDown}
+                            onMouseMove={handleMouseMove}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                        >
+                            {devImage && (
+                                <img 
+                                    src={devImage} 
+                                    alt="Development version"
+                                    style={{
+                                        transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+                                    }}
+                                />
+                            )}
+                            {figmaImage && (
+                                <img 
+                                    src={figmaImage} 
+                                    alt="Figma design"
+                                    className="overlay-image"
+                                    style={{
+                                        opacity: opacity,
+                                        transform: `scale(${scale}) translate(${position.x}px, ${position.y}px)`,
+                                    }}
+                                />
+                            )}
+                            {!figmaImage && !devImage && (
+                                <div className="flex items-center justify-center h-full text-gray-500">
+                                    Upload both images to start comparison
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        ReactDOM.render(<DesignQATool />, document.getElementById('root'));
+    </script>
+</body>
+</html>
